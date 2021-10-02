@@ -67,13 +67,13 @@ param(
 #This requires a RunAs account
 $ServicePrincipalConnection = Get-AutomationConnection -Name 'AzureRunAsConnection'
 
-Add-AzureRmAccount `
+Connect-AzAccount `
     -ServicePrincipal `
     -TenantId $ServicePrincipalConnection.TenantId `
     -ApplicationId $ServicePrincipalConnection.ApplicationId `
     -CertificateThumbprint $ServicePrincipalConnection.CertificateThumbprint
 
-$AzureContext = Select-AzureRmSubscription -SubscriptionId $ServicePrincipalConnection.SubscriptionID
+$AzureContext = Select-AzSubscription -SubscriptionId $ServicePrincipalConnection.SubscriptionID
 #endregion BoilerplateAuthentication
 
 #If you wish to use the run context, it must be converted from JSON
@@ -94,7 +94,7 @@ if (!$variable)
 # In order to prevent asking for an Automation Account name and the resource group of that AA,
 # search through all the automation accounts in the subscription 
 # to find the one with a job which matches our job ID
-$AutomationResource = Get-AzureRmResource -ResourceType Microsoft.Automation/AutomationAccounts
+$AutomationResource = Get-AzResource -ResourceType Microsoft.Automation/AutomationAccounts
 
 foreach ($Automation in $AutomationResource)
 {
@@ -122,14 +122,14 @@ $vmIds | ForEach-Object {
     $rg = $split[4];
     $name = $split[8];
     Write-Output ("Subscription Id: " + $subscriptionId)
-    $mute = Select-AzureRmSubscription -Subscription $subscriptionId
+    $mute = Select-AzSubscription -Subscription $subscriptionId
 
-    $vm = Get-AzureRmVM -ResourceGroupName $rg -Name $name -Status -DefaultProfile $mute
+    $vm = Get-AzVM -ResourceGroupName $rg -Name $name -Status -DefaultProfile $mute
 
     $state = ($vm.Statuses[1].DisplayStatus -split " ")[1]
     if($state -in $stoppableStates) {
         Write-Output "Stopping '$($name)' ..."
-        $newJob = Start-ThreadJob -ScriptBlock { param($resource, $vmname, $sub) $context = Select-AzureRmSubscription -Subscription $sub; Stop-AzureRmVM -ResourceGroupName $resource -Name $vmname -Force -DefaultProfile $context} -ArgumentList $rg,$name,$subscriptionId
+        $newJob = Start-ThreadJob -ScriptBlock { param($resource, $vmname, $sub) $context = Select-AzSubscription -Subscription $sub; Stop-AzVM -ResourceGroupName $resource -Name $vmname -Force -DefaultProfile $context} -ArgumentList $rg,$name,$subscriptionId
         $jobIDs.Add($newJob.Id)
     }else {
         Write-Output ($name + ": already stopped. State: " + $state) 
@@ -152,4 +152,4 @@ foreach($id in $jobsList)
     }
 }
 #Clean up our variables:
-Remove-AzureRmAutomationVariable -AutomationAccountName $AutomationAccount -ResourceGroupName $ResourceGroup -name $runID
+Remove-AzAutomationVariable -AutomationAccountName $AutomationAccount -ResourceGroupName $ResourceGroup -name $runID
