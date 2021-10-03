@@ -98,7 +98,7 @@ $AutomationResource = Get-AzResource -ResourceType Microsoft.Automation/Automati
 
 foreach ($Automation in $AutomationResource)
 {
-    $Job = Get-AzureRmAutomationJob -ResourceGroupName $Automation.ResourceGroupName -AutomationAccountName $Automation.Name -Id $PSPrivateMetadata.JobId.Guid -ErrorAction SilentlyContinue
+    $Job = Get-AzAutomationJob -ResourceGroupName $Automation.ResourceGroupName -AutomationAccountName $Automation.Name -Id $PSPrivateMetadata.JobId.Guid -ErrorAction SilentlyContinue
     if (!([string]::IsNullOrEmpty($Job)))
     {
         $ResourceGroup = $Job.ResourceGroupName
